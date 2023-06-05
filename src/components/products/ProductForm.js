@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { useNavigate } from "react-router-dom"
 
 export const ProductsForm = () => {
@@ -8,11 +8,13 @@ export const ProductsForm = () => {
     */
     const [product, update] = useState({
         name: "",
-        type: "",
-        price: ""
+        type: 0,
+        price: 0
 
 
     })
+
+    const [productTypes, setProductTypes] = useState([])
 
     const navigate = useNavigate()
     /*
@@ -27,22 +29,57 @@ export const ProductsForm = () => {
         event.preventDefault()
 
         // TODO: Create the object to be saved to the API
+        const productsToSendToAPI = {
+
+            name: product.name,
+            productTypeId: parseInt(product.productTypeId),
+            pricePerUnit: +product.price
 
 
-        // TODO: Perform the fetch() to POST the object to the API
+        }
+
+        return fetch(`http://localhost:8088/products`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify(productsToSendToAPI)
+        })
+            .then(response => response.json())
+            .then(() => {
+                navigate("/products")
+
+            })
     }
 
+    useEffect(
+        () => {
+            fetch(`http://localhost:8088/productTypes`)
+                .then(response => response.json())
+                .then((productsArray) => {
+                    setProductTypes(productsArray)
+                })
+        },
+        [] //When this array is empty, you are observing inital componenet state
+    );
+
+
+
+    // TODO: Perform the fetch() to POST the object to the API
+
+
+
     return (
-        <form className="ticketForm">
-            <h2 className="ticketForm__title">New Service Ticket</h2>
+        <form className="productForm">
+            <h2 className="productForm__title">New Product</h2>
             <fieldset>
                 <div className="form-group">
-                    <label htmlFor="description">Description:</label>
+                    <label htmlFor="name">Product name</label>
                     <input
                         required autoFocus
                         type="text"
                         className="form-control"
-                        placeholder="Brief description of problem"
+                        placeholder="Name the product"
                         value={product.name}
                         onChange={
                             (evt) => {
@@ -54,24 +91,45 @@ export const ProductsForm = () => {
                 </div>
             </fieldset>
             <fieldset>
-                <div className="form-group">
-                    <label htmlFor="name">Emergency:</label>
-                    <input type="text"
-                        value={product.productType.type}
-                        onChange={
-                            (evt) => {
-                                const copy = { ...product }
-                                copy.productType.type = evt.target.value
-                                update(copy)
-                            }
-                        } />
+                <div className="radio-buttons">
+                    <label>Type of product</label>
+                    {
+                        productTypes.map((productType) => (
+
+                            <>
+                                <input
+                                    required autoFocus
+                                    type='radio'
+                                    className="radio-buttons"
+                                    name='productTypeId'
+                                    value={productType.id}
+                                    onChange={
+                                        (evt) => {
+
+                                            const copy = { ...product }
+                                            copy[evt.target.name] = evt.target.value
+                                            update(copy)
+                                        }
+                                    }
+
+                                /> {productType.type} </>)
+
+                        )
+                    }
+
+
+
+
+
+
+
                 </div>
             </fieldset>
 
             <fieldset>
                 <div className="form-group">
-                    <label htmlFor="name">Emergency:</label>
-                    <input type="text"
+                    <label htmlFor="name">Price of product</label>
+                    <input type="number"
                         value={product.price}
                         onChange={
                             (evt) => {
@@ -82,8 +140,10 @@ export const ProductsForm = () => {
                         } />
                 </div>
             </fieldset>
-            <button className="btn btn-primary">
-                Submit Ticket
+            <button
+                onClick={(clickEvent) => handleSaveButtonClick(clickEvent)}
+                className="btn btn-primary">
+                Save Product
             </button>
         </form>
     )
